@@ -1,0 +1,23 @@
+W, H
+TILE
+GAME_RES
+RES
+FPS
+sc
+game_sc
+clock
+grid
+::figures_pos
+figures
+figure_rect
+field
+anim_count, anim_speed, anim_limit
+bg, game_bg
+::main_font
+font
+title_tetris, title_score, title_record
+figure, figure
+color, next_color
+score
+lines
+scores
