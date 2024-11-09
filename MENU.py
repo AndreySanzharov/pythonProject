@@ -2,7 +2,6 @@ from pygame.locals import *
 from forinarow import *
 from py2048 import DveTysyachiSorokVosyem
 from tetris import Tetris
-from tictactoe import *
 import music
 
 class Menu:
@@ -22,8 +21,7 @@ class Menu:
         # Загрузка иконок для игр и изменение их размера
         self.ims = [pygame.transform.scale(pygame.image.load("icons/2048.png"), self.size),
                     pygame.transform.scale(pygame.image.load("icons/tetris.png"), self.size),
-                    pygame.transform.scale(pygame.image.load("icons/4inarow.png"), self.size),
-                    pygame.transform.scale(pygame.image.load("icons/tictactoe.png"), self.size)]
+                    pygame.transform.scale(pygame.image.load("icons/4inarow.png"), self.size)]
         # Позиции и размеры иконок на экране
         self.imrects = [(50, 100, 100, 100),
                         (50, 300, 100, 100),
@@ -94,13 +92,6 @@ class Menu:
                 elif self.button_3.collidepoint((mx, my)):
                     # Запуск игры 4 в ряд
                     g = FourInARow(6, 7)
-                    g.start()
-                    self.playing = True
-                elif self.button_4.collidepoint((mx, my)):
-                    # Запуск игры Крестики-нолики
-                    g = TicTacToe(250, 20)
-                    g.selection_mode()
-                    g.update()
                     g.start()
                     self.playing = True
 

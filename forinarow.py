@@ -1,138 +1,145 @@
 import math
 import random
 import sys
-
 import numpy as np
 import pygame
-
 import music
 
+# Инициализация Pygame
 pygame.init()
 
+# Определяем цвета для игрового интерфейса
 BLUE = pygame.Color('blue')
 BLACK = pygame.Color('black')
 RED = pygame.Color('red')
 YELLOW = pygame.Color('yellow')
 
+# Константы для игроков и типа ячейки
 PLAYER = 0
 AI = 1
-
 EMPTY = 0
 PLAYER_PIECE = 1
 AI_PIECE = 2
 
+# Длина окна для победного условия
 WINDOW_LENGTH = 4
 
+# Размер клетки
 SQUARESIZE = 100
-
 RADIUS = int(SQUARESIZE / 2 - 5)
 
 
 class FourInARow:
     def __init__(self, row_count, col_count):
-
         # Инициализация игры с заданным количеством рядов и колонок.
-
         self.row_count = row_count
         self.col_count = col_count
         self.width = col_count * SQUARESIZE
-        self.height = (row_count + 1) * SQUARESIZE
+        self.height = (row_count + 1) * SQUARESIZE  # Дополнительный ряд для отображения хода
         self.size = (self.width, self.height)
-        self.screen = pygame.display.set_mode(self.size)
-        self.board = self.create_board()
-        self.draw_board(self.board)
-        pygame.display.set_caption("FourInARow")
-        programicon = pygame.image.load('icons/4inarow.png')
+        self.screen = pygame.display.set_mode(self.size)  # Создаем экран
+        self.board = self.create_board()  # Создаем игровую доску
+        self.draw_board(self.board)  # Отрисовываем доску
+        pygame.display.set_caption("FourInARow")  # Устанавливаем заголовок окна
+        programicon = pygame.image.load('icons/4inarow.png')  # Загружаем иконку
         pygame.display.set_icon(programicon)
 
-    def create_board(self):  # создаем доску
-        board = np.zeros((self.row_count, self.col_count))  # Заполнение доски нулями (пустыми клетками)
+    def create_board(self):
+        # Создаем пустую доску (матрица заполнена нулями, означающими пустые клетки)
+        board = np.zeros((self.row_count, self.col_count))
         return board
 
     @staticmethod
-    def drop_piece(board, row, col, piece):  # делаем ход
+    def drop_piece(board, row, col, piece):
+        # Выполняем ход, устанавливая кусочек на указанную строку и столбец
         board[row][col] = piece
 
-    def is_valid_location(self, board, col):  # проверяем, можно ли пойти по этой координате(есть ли шарик вверху)
+    def is_valid_location(self, board, col):
+        # Проверка, можно ли сделать ход в данном столбце (пустая ли верхняя клетка)
         return board[self.row_count - 1][col] == 0
 
-    def get_next_open_row(self, board, col):  # ищем номер ряда, в который упадет шарик
+    def get_next_open_row(self, board, col):
+        # Поиск первой доступной строки в выбранном столбце
         for r in range(self.row_count):
             if board[r][col] == 0:
                 return r
 
-    def winning_move(self, board, piece):  # проверка победы
+    def winning_move(self, board, piece):
+        # Проверка победного условия для горизонталей, вертикалей и диагоналей
+        # Проверка горизонтальных победных комбинаций
         for c in range(self.col_count - 3):
             for r in range(self.row_count):
-                if board[r][c] == piece and board[r][c + 1] == piece and board[r][c + 2] == piece and \
-                        board[r][c + 3] == piece:
+                if all([board[r][c + i] == piece for i in range(4)]):
                     return True
 
+        # Проверка вертикальных победных комбинаций
         for c in range(self.col_count):
             for r in range(self.row_count - 3):
-                if board[r][c] == piece and board[r + 1][c] == piece and board[r + 2][c] == piece and \
-                        board[r + 3][c] == piece:
+                if all([board[r + i][c] == piece for i in range(4)]):
                     return True
 
+        # Проверка диагональных победных комбинаций (слева направо)
         for c in range(self.col_count - 3):
             for r in range(self.row_count - 3):
-                if board[r][c] == piece and board[r + 1][c + 1] == piece and board[r + 2][c + 2] == piece and \
-                        board[r + 3][c + 3] == piece:
+                if all([board[r + i][c + i] == piece for i in range(4)]):
                     return True
 
+        # Проверка диагональных победных комбинаций (справа налево)
         for c in range(self.col_count - 3):
             for r in range(3, self.row_count):
-                if board[r][c] == piece and board[r - 1][c + 1] == piece and board[r - 2][c + 2] == piece and \
-                        board[r - 3][c + 3] == piece:
+                if all([board[r - i][c + i] == piece for i in range(4)]):
                     return True
 
     @staticmethod
-    def evaluate_window(window, piece):  # оцениваем по ряду
+    def evaluate_window(window, piece):
+        # Оценка очков для конкретного окна (подматрицы)
         score = 0
-        opp_piece = PLAYER_PIECE
-        if piece == PLAYER_PIECE:
-            opp_piece = AI_PIECE
+        opp_piece = PLAYER_PIECE if piece == AI_PIECE else AI_PIECE
 
+        # Добавляем очки за комбинации (4 подряд, 3 подряд, 2 подряд)
         if window.count(piece) == 4:
-            score += 100  # оценка за 4 подряд
+            score += 100
         elif window.count(piece) == 3 and window.count(EMPTY) == 1:
-            score += 5  # оценка за 3 подряд
+            score += 5
         elif window.count(piece) == 2 and window.count(EMPTY) == 2:
-            score += 2  # оценка за 2 подряд
+            score += 2
 
+        # Уменьшаем очки за комбинацию из 3 подряд для противника
         if window.count(opp_piece) == 3 and window.count(EMPTY) == 1:
-            score -= 4  # отрицательная оценка за выгодный ход противника
+            score -= 4
 
         return score
 
-    def score_position(self, board, piece):  # оцениваем всю доску для поиска наилучшего хода
+    def score_position(self, board, piece):
+        # Оцениваем всю доску для выбора оптимального хода
         score = 0
-        # оценка центра доски
+
+        # Оценка центральной колонки для дополнительного приоритета
         center_array = [int(i) for i in list(board[:, self.col_count // 2])]
         center_count = center_array.count(piece)
         score += center_count * 3
 
-        # оценка по горизонталям
+        # Оценка по горизонтали
         for r in range(self.row_count):
             row_array = [int(i) for i in list(board[r, :])]
             for c in range(self.col_count - 3):
                 window = row_array[c:c + WINDOW_LENGTH]
                 score += self.evaluate_window(window, piece)
 
-        # оценка по вертикалям
+        # Оценка по вертикали
         for c in range(self.col_count):
             col_array = [int(i) for i in list(board[:, c])]
             for r in range(self.row_count - 3):
                 window = col_array[r:r + WINDOW_LENGTH]
                 score += self.evaluate_window(window, piece)
 
-        # оценка по диагоналям (слева направо)
+        # Оценка по диагоналям (слева направо)
         for r in range(self.row_count - 3):
             for c in range(self.col_count - 3):
                 window = [board[r + i][c + i] for i in range(WINDOW_LENGTH)]
                 score += self.evaluate_window(window, piece)
 
-        # оценка по горизонталям (справа налево)
+        # Оценка по диагоналям (справа налево)
         for r in range(self.row_count - 3):
             for c in range(self.col_count - 3):
                 window = [board[r + 3 - i][c + i] for i in range(WINDOW_LENGTH)]
@@ -140,11 +147,13 @@ class FourInARow:
 
         return score
 
-    def is_terminal_node(self, board):  # проверяем на возможность ходить (является ли данная позиция конечной)
+    def is_terminal_node(self, board):
+        # Проверка, завершена ли игра (победа или ничья)
         return self.winning_move(board, PLAYER_PIECE) or \
             self.winning_move(board, AI_PIECE) or len(self.get_valid_locations(board)) == 0
 
-    def minimax(self, board, depth, alpha, beta, maximizing_player):  # рекурсивный алгоритм для поиска лучшего хода
+    def minimax(self, board, depth, alpha, beta, maximizing_player):
+        # Алгоритм Минимакс для выбора оптимального хода
         valid_locations = self.get_valid_locations(board)
         is_terminal = self.is_terminal_node(board)
         if depth == 0 or is_terminal:
@@ -172,7 +181,6 @@ class FourInARow:
                 if alpha >= beta:
                     break
             return column, value
-
         else:
             value = math.inf
             column = random.choice(valid_locations)
@@ -189,14 +197,16 @@ class FourInARow:
                     break
             return column, value
 
-    def get_valid_locations(self, board):  # возвращаем список колонок, в которые мы можем бросить шарик
+    def get_valid_locations(self, board):
+        # Возвращаем список доступных колонок для хода
         valid_locations = []
         for col in range(self.col_count):
             if self.is_valid_location(board, col):
                 valid_locations.append(col)
         return valid_locations
 
-    def pick_best_move(self, board, piece):  # рассматриваем все ходы и выбираем лучший
+    def pick_best_move(self, board, piece):
+        # Определяем наилучший ход, проверяя все доступные ходы
         valid_locations = self.get_valid_locations(board)
         best_score = -10000
         best_col = random.choice(valid_locations)
@@ -208,29 +218,24 @@ class FourInARow:
             if score > best_score:
                 best_score = score
                 best_col = col
-
         return best_col
 
-    def draw_board(self, board):  # отрисовываем доску
+    def draw_board(self, board):
+        # Отрисовка игрового поля с клетками
         for c in range(self.col_count):
             for r in range(self.row_count):
                 pygame.draw.rect(self.screen, BLUE,
                                  (c * SQUARESIZE, r * SQUARESIZE + SQUARESIZE, SQUARESIZE, SQUARESIZE))
-                pygame.draw.circle(self.screen, BLACK, (int(c * SQUARESIZE + SQUARESIZE / 2),
-                                                        int(r * SQUARESIZE + SQUARESIZE + SQUARESIZE / 2)),
-                                   RADIUS)
+                pygame.draw.circle(self.screen, BLACK, (
+                int(c * SQUARESIZE + SQUARESIZE / 2), int(r * SQUARESIZE + SQUARESIZE + SQUARESIZE / 2)), RADIUS)
 
         for c in range(self.col_count):
             for r in range(self.row_count):
-                if board[r][c] == PLAYER_PIECE:
-                    pygame.draw.circle(self.screen, RED, (int(c * SQUARESIZE + SQUARESIZE / 2),
-                                                          self.height - int(r * SQUARESIZE + SQUARESIZE / 2)),
-                                       RADIUS)
-                elif board[r][c] == AI_PIECE:
-                    pygame.draw.circle(self.screen, YELLOW, (int(c * SQUARESIZE + SQUARESIZE / 2),
-                                                             self.height - int(r * SQUARESIZE + SQUARESIZE / 2)),
-                                       RADIUS)
+                color = RED if board[r][c] == PLAYER_PIECE else YELLOW if board[r][c] == AI_PIECE else BLACK
+                pygame.draw.circle(self.screen, color, (
+                int(c * SQUARESIZE + SQUARESIZE / 2), self.height - int(r * SQUARESIZE + SQUARESIZE / 2)), RADIUS)
         pygame.display.update()
+
 
     def start(self):  # основной цикл
         pygame.display.update()
