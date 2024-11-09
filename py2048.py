@@ -25,6 +25,7 @@ ColorPalette = {
     131072: (70, 110, 255)
 }
 
+
 # Класс игры 2048
 class DveTysyachiSorokVosyem:
     def __init__(self, menu_sc):
@@ -155,6 +156,16 @@ class DveTysyachiSorokVosyem:
                 return False
         return True
 
+    def display_game_over(self):
+        # Метод для вывода надписи "GAME OVER" на экран
+        self.screen.fill((189, 172, 161))  # Цвет фона экрана при завершении игры
+        game_over_font = pygame.font.SysFont('Comic Sans MS', 50)  # Шрифт для надписи
+        game_over_text = game_over_font.render("GAME OVER", True, (255, 0, 0))  # Создание текста
+        text_rect = game_over_text.get_rect(center=(self.sz // 2, self.sz // 2))  # Центрирование текста
+        self.screen.blit(game_over_text, text_rect)  # Отображение текста на экране
+        pygame.display.flip()  # Обновление экрана
+        pygame.time.delay(2000)  # Пауза для показа надписи
+
     def wait_for_key(self):
         # Ожидание ввода пользователя с клавиатуры
         while True:
@@ -162,6 +173,7 @@ class DveTysyachiSorokVosyem:
                 # Если игра окончена, выставляем флаг и завершаем
                 self.fl = False
                 print('GAME OVER!')
+                self.display_game_over()
                 break
             for event in pygame.event.get():
                 if event.type == QUIT:
